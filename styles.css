@@ -174,10 +174,14 @@ p {
 
     display: flex;
     flex-direction: row;
-    justify-content: space-between;
+    justify-content: space-around;
     align-items: center;
 
     overflow: hidden;
+}
+
+.spacer {
+    flex: 1;
 }
 
 .content p {
@@ -217,7 +221,7 @@ p {
 
 .player p.small {
     font-size: 25px;
-    font-size: 5vw;
+    font-size: 10vw;
 
     font-weight: normal;
     font-weight: 400;
@@ -282,10 +286,12 @@ p {
 
 .flex-col {
     flex-direction: column;
+    justify-content: space-between;
 }
 
 .flex-row {
     flex-direction: row;
+    justify-content: space-around;
 }
 
 .dark-right {

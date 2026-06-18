@@ -75,6 +75,7 @@ function paintPlayer(id, player, mini = false) {
 
         const startingLife = player.startingLife || 40;
         contentEl.innerHTML += `<p class="life-total rotate-${playerDirection}">${startingLife}</p>`;
+        // contentEl.innerHTML += `<div class="spacer"></div>`;
 
         if (playerDirection == "bottom" || playerDirection == "left") {
             contentEl.innerHTML += `<p class="symbol small rotate-${playerDirection}">+</p>`;
@@ -102,6 +103,8 @@ function paintPlayer(id, player, mini = false) {
 
         if (playerDirection == "left" || playerDirection == "right") {
             contentEl.classList.add("flex-col");
+        } else {
+            contentEl.classList.add("flex-row");
         }
 
         contentEl.innerHTML += `<div class="${loseLifeClass} clickable" onclick="incrementLife('${id}', -1)"></div>
@@ -131,7 +134,7 @@ function init(layout) {
     }
 }
 
-function paintSetting(setting, playerId) {
+function paintSetting(setting, playerId, settingIndex) {
     const settingEl = document.createElement("div");
     settingEl.classList.add("player");
     settingEl.id = `setting-${setting.label}`;
@@ -151,7 +154,7 @@ function paintSetting(setting, playerId) {
     if (setting.render) {
         contentEl.appendChild(setting.render);
     }
-    contentEl.innerHTML += `<p class="life-total small word-wrap rotate-bottom">${setting.label || "[no label]"}</p>`;
+    contentEl.innerHTML += `<p class="life-total small word-wrap rotate-bottom">${setting.label}</p>`;
 
     if (isSplit) {
         contentEl.innerHTML += `<p class="symbol small rotate-bottom">></p>`;
@@ -159,8 +162,9 @@ function paintSetting(setting, playerId) {
         <div class="right clickable" onclick="${setting.onRight}"></div>`;
     } else if (setting.onclick) {
         contentEl.innerHTML += `<div class="full clickable" onclick="${setting.onclick}"></div>`;
+    } else if (setting.children) {
+        contentEl.innerHTML += `<div class="full clickable" onclick="currentSetting.push(${settingIndex}),paintSettings(settings, settingLayout)"></div>`;
     }
-
     return settingEl;
 }
 
@@ -179,7 +183,7 @@ function paintSettings(settings, layout) {
     settingsContainerEl.style.gridTemplateAreas = layout.gridTemplateAreas;
     settingsContainerEl.innerHTML = "";
 
-    subSettings = getAtPosition(settings, currentSetting);
+    subSettings = getAtPosition(settings, currentSetting).children;
 
     const playerIds = Object.keys(layout.players);
     const availableSpace = playerIds.length;
@@ -187,12 +191,19 @@ function paintSettings(settings, layout) {
         for (let i = 0; i < subSettings.length; i++) {
             const id = playerIds[i];
             const setting = subSettings[i];
-            const child = paintSetting(setting, id);
+            const child = paintSetting(setting, id, i);
             settingsContainerEl.appendChild(child);
         }
         if (currentSetting.length == 0) {
-            const id = playerIds[availableSpace - 1];
-            const child = paintSetting(exitSetting, id);
+            i = availableSpace - 1;
+            const id = playerIds[i];
+            const child = paintSetting(exitSetting, id, i);
+            settingsContainerEl.appendChild(child);
+        }
+        if (currentSetting.length > 0) {
+            i = availableSpace - 1;
+            const id = playerIds[i];
+            const child = paintSetting(backSetting, id, i);
             settingsContainerEl.appendChild(child);
         }
     }
@@ -200,6 +211,11 @@ function paintSettings(settings, layout) {
 
 function backSettings() {
     currentSetting.pop();
+    paintSettings(settings, settingLayout);
+}
+
+function resetSettings() {
+    currentSetting = [];
     paintSettings(settings, settingLayout);
 }
 
@@ -228,21 +244,23 @@ for (let i = 0; i < layouts.length; i++) {
     const layout = layouts[i];
     const setting = {
         render: paintMiniLayout(layout),
-        label: "layout",
+        label: "",
+        onclick: `layout = layouts[${i}], init(layout), toggleSettings();`,
     };
     layoutSettings.push(setting);
 }
 
-const settings = [
-    { label: "change layout", children: layoutSettings },
-    { label: "restart game" },
-    layoutSettings[1],
-];
+const settings = {
+    children: [
+        { label: "change layout", children: layoutSettings },
+        { label: "restart game" },
+    ],
+};
 let currentSetting = [];
-const exitSetting = { label: "Exit", onclick: "toggleSettings()" };
-const backSetting = { label: "Back", onclick: "backSettings()" };
+const exitSetting = { label: "exit settings", onclick: "toggleSettings()" };
+const backSetting = { label: "back", onclick: "backSettings()" };
 
-const settingLayout = layouts[0]
-const layout = layouts[1];
+const settingLayout = layouts[0];
+let layout = layouts[0];
 init(layout);
 paintSettings(settings, settingLayout);
