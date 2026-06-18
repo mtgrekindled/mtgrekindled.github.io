@@ -1,21 +1,29 @@
-function writeError(e) {
-    const d = new Date();
+function writeLog(e) {
+    if (errorTimestamp) {
+        const d = new Date();
 
-    const date = d
-        .toLocaleString("en-GB", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-        })
-        .replace(",", "");
-    document.querySelector("#error-log").innerHTML += `<br>[${date}] ${e}`;
+        const date = d
+            .toLocaleString("en-GB", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+            })
+            .replace(",", "");
+        document.querySelector("#error-log").innerHTML += `<br>[${date}] ${e}`;
+    } else {
+        document.querySelector("#error-log").innerHTML += `<br>${e}`;
+    }
 }
-writeError("Error Log");
+let errorTimestamp = true;
+let errorSource = false;
+writeLog("Error Log");
 window.onerror = function (message, source, line, column, error) {
-    writeError(`${message} - line ${line}:${column} - source ${source}`);
+    writeLog(
+        `${message} - line ${line}:${column} ${errorSource ? `- source ${source}` : ""}`,
+    );
     show(document.querySelector(".error-log-container"));
 };
 function testError() {
@@ -564,16 +572,24 @@ const settings = {
                             onclick: `toggleHidden(document.querySelector('.error-log-container'))`,
                         },
                         {
-                            label: "test error",
-                            onclick: `testError()`,
-                        },
-                        {
                             label: "clear log",
                             onclick: `document.querySelector('#error-log').innerHTML = 'log cleared'`,
                         },
                         {
+                            label: "toggle source",
+                            onclick: `errorSource = !errorSource; writeLog(\`source = \$\{errorSource\}\`)`,
+                        },
+                        {
+                            label: "toggle timestamp",
+                            onclick: `errorTimestamp = !errorTimestamp; writeLog(\`timestamp = \$\{errorTimestamp\}\`)`,
+                        },
+                        {
+                            label: "test error",
+                            onclick: `testError()`,
+                        },
+                        {
                             label: "test write",
-                            onclick: `writeError('test')`,
+                            onclick: `writeLog('test')`,
                         },
                     ],
                 },
