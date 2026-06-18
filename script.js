@@ -3,7 +3,7 @@ let rotated = false;
 
 const layouts = [
     {
-        orientation: "portrait",
+        preferOrientation: "portrait",
         gridTemplateAreas: `"a b" "c d"`,
         gridTemplateColumns: 2,
         gridTemplateRows: 2,
@@ -15,7 +15,7 @@ const layouts = [
         },
     },
     {
-        orientation: "portrait",
+        preferOrientation: "portrait",
         gridTemplateAreas: `"a a" "b c" "b c" "d d"`,
         gridTemplateColumns: 2,
         gridTemplateRows: 4,
@@ -26,7 +26,33 @@ const layouts = [
             d: { direction: "bottom" },
         },
     },
+    {
+        preferOrientation: "portrait",
+        gridTemplateAreas: `"a" "b"`,
+        gridTemplateColumns: 1,
+        gridTemplateRows: 2,
+        players: {
+            a: { direction: "top" },
+            b: { direction: "bottom" },
+        },
+        startingLife: 20,
+    },
+    {
+        preferOrientation: "landscape",
+        gridTemplateAreas: `"a b"`,
+        gridTemplateColumns: 2,
+        gridTemplateRows: 1,
+        players: {
+            a: { direction: "left" },
+            b: { direction: "right" },
+        },
+        startingLife: 20,
+    },
 ];
+
+function clamp(value, min, max) {
+    return Math.min(Math.max(value, min), max);
+}
 
 function toggleSettings() {
     const settingsContainerEl = document.querySelector(".settings-container");
@@ -68,9 +94,9 @@ function paintPlayer(id, player, mini = false) {
         playerEl.id = `player-${id}`;
 
         if (playerDirection == "bottom" || playerDirection == "left") {
-            contentEl.innerHTML += `<p class="symbol small rotate-${playerDirection}">-</p>`;
+            contentEl.innerHTML += `<p class="symbol rotate-${playerDirection}">-</p>`;
         } else {
-            contentEl.innerHTML += `<p class="symbol small rotate-${playerDirection}">+</p>`;
+            contentEl.innerHTML += `<p class="symbol rotate-${playerDirection}">+</p>`;
         }
 
         const startingLife = player.startingLife || 40;
@@ -78,9 +104,9 @@ function paintPlayer(id, player, mini = false) {
         // contentEl.innerHTML += `<div class="spacer"></div>`;
 
         if (playerDirection == "bottom" || playerDirection == "left") {
-            contentEl.innerHTML += `<p class="symbol small rotate-${playerDirection}">+</p>`;
+            contentEl.innerHTML += `<p class="symbol rotate-${playerDirection}">+</p>`;
         } else {
-            contentEl.innerHTML += `<p class="symbol small rotate-${playerDirection}">-</p>`;
+            contentEl.innerHTML += `<p class="symbol rotate-${playerDirection}">-</p>`;
         }
 
         if (playerDirection == "bottom") {
@@ -137,7 +163,9 @@ function init(layout) {
 function paintSetting(setting, playerId, settingIndex) {
     const settingEl = document.createElement("div");
     settingEl.classList.add("player");
-    settingEl.id = `setting-${setting.label}`;
+    if (setting.label) {
+        settingEl.id = `setting-${setting.label}`;
+    }
     settingEl.style.gridArea = playerId;
 
     const contentEl = document.createElement("div");
@@ -147,23 +175,26 @@ function paintSetting(setting, playerId, settingIndex) {
     const isSplit = setting.split;
 
     if (isSplit) {
-        contentEl.innerHTML += `<p class="symbol small rotate-bottom"><</p>`;
+        const symbolLeft = setting.leftLabelFunction?.() || "<";
+        contentEl.innerHTML += `<p class="symbol rotate-bottom">${symbolLeft}</p>`;
         settingEl.classList.add("dark-right");
     }
 
     if (setting.render) {
         contentEl.appendChild(setting.render);
     }
-    contentEl.innerHTML += `<p class="life-total small word-wrap rotate-bottom">${setting.label}</p>`;
+    const label = setting.labelFunction?.() || setting.label;
+    contentEl.innerHTML += `<p class="life-total small word-wrap rotate-bottom">${label}</p>`;
 
     if (isSplit) {
-        contentEl.innerHTML += `<p class="symbol small rotate-bottom">></p>`;
+        const symbolRight = setting.rightLabelFunction?.() || ">";
+        contentEl.innerHTML += `<p class="symbol rotate-bottom">${symbolRight}</p>`;
         contentEl.innerHTML += `<div class="left clickable" onclick="${setting.onLeft}"></div>
         <div class="right clickable" onclick="${setting.onRight}"></div>`;
     } else if (setting.onclick) {
         contentEl.innerHTML += `<div class="full clickable" onclick="${setting.onclick}"></div>`;
     } else if (setting.children) {
-        contentEl.innerHTML += `<div class="full clickable" onclick="currentSetting.push(${settingIndex}),paintSettings(settings, settingLayout)"></div>`;
+        contentEl.innerHTML += `<div class="full clickable" onclick="currentSetting.push(${settingIndex}),paintSettings(settings, settingsLayout)"></div>`;
     }
     return settingEl;
 }
@@ -194,29 +225,47 @@ function paintSettings(settings, layout) {
             const child = paintSetting(setting, id, i);
             settingsContainerEl.appendChild(child);
         }
-        if (currentSetting.length == 0) {
-            i = availableSpace - 1;
+        i = availableSpace - 1;
+        const id = playerIds[i];
+        const child = paintSetting(backSetting, id, i);
+        settingsContainerEl.appendChild(child);
+    } else {
+        totalPages = Math.ceil(subSettings.length / (availableSpace - 1));
+        currentPage = clamp(currentPage, 0, totalPages);
+
+        offset = currentPage * (availableSpace - 1);
+        for (
+            let i = 0;
+            i < availableSpace - 1 && i + offset < subSettings.length;
+            i++
+        ) {
             const id = playerIds[i];
-            const child = paintSetting(exitSetting, id, i);
+            const setting = subSettings[i + offset];
+            const child = paintSetting(setting, id, i + offset);
             settingsContainerEl.appendChild(child);
         }
-        if (currentSetting.length > 0) {
-            i = availableSpace - 1;
-            const id = playerIds[i];
-            const child = paintSetting(backSetting, id, i);
-            settingsContainerEl.appendChild(child);
-        }
+
+        i = availableSpace - 1;
+        const id = playerIds[i];
+        const child = paintSetting(pageSetting, id, i);
+        settingsContainerEl.appendChild(child);
     }
 }
 
 function backSettings() {
-    currentSetting.pop();
-    paintSettings(settings, settingLayout);
+    if (currentSetting.length == 0) {
+        toggleSettings();
+    } else {
+        currentSetting.pop();
+        paintSettings(settings, settingsLayout);
+    }
 }
 
 function resetSettings() {
     currentSetting = [];
-    paintSettings(settings, settingLayout);
+    currentPage = 0;
+    totalPages = 0;
+    paintSettings(settings, settingsLayout);
 }
 
 function paintMiniLayout(layout) {
@@ -225,7 +274,7 @@ function paintMiniLayout(layout) {
     playerContainerEl.style.gridTemplateColumns = `repeat(${layout.gridTemplateColumns}, 1fr)`;
     playerContainerEl.style.gridTemplateRows = `repeat(${layout.gridTemplateRows}, 1fr)`;
     playerContainerEl.style.gridTemplateAreas = layout.gridTemplateAreas;
-    playerContainerEl.style.background = `var(--color-background)`;
+    // playerContainerEl.style.background = `var(--color-background)`;
 
     const playerIds = Object.keys(layout.players);
     for (let i = 0; i < playerIds.length; i++) {
@@ -245,7 +294,7 @@ for (let i = 0; i < layouts.length; i++) {
     const setting = {
         render: paintMiniLayout(layout),
         label: "",
-        onclick: `layout = layouts[${i}], init(layout), toggleSettings();`,
+        onclick: `layout = layouts[${i}], init(layout), resetSettings(), toggleSettings();`,
     };
     layoutSettings.push(setting);
 }
@@ -257,10 +306,58 @@ const settings = {
     ],
 };
 let currentSetting = [];
-const exitSetting = { label: "exit settings", onclick: "toggleSettings()" };
-const backSetting = { label: "back", onclick: "backSettings()" };
+let currentPage = 0;
+let totalPages = 0;
 
-const settingLayout = layouts[0];
+function pageSettingLabel() {
+    return `page ${currentPage}/${totalPages}`;
+}
+function pageLeftLabel() {
+    return currentPage <= 0 ? "back" : "<";
+}
+function pageRightLabel() {
+    return currentPage + 1 >= totalPages ? "back" : ">";
+}
+function pageOnLeft() {
+    if (currentPage <= 0) {
+        backSettings();
+        currentPage = 0;
+        totalPages = 0;
+    } else {
+        currentPage -= 1;
+    }
+    paintSettings(settings, settingsLayout);
+}
+function pageOnRight() {
+    if (currentPage + 1 >= totalPages) {
+        backSettings();
+        currentPage = 0;
+        totalPages = 0;
+    } else {
+        currentPage += 1;
+    }
+    paintSettings(settings, settingsLayout);
+}
+function backSettingLabel() {
+    return currentSetting.length == 0 ? "exit settings" : "back";
+}
+
+const pageSetting = {
+    label: "page",
+    labelFunction: pageSettingLabel,
+    split: true,
+    leftLabelFunction: pageLeftLabel,
+    rightLabelFunction: pageRightLabel,
+    onLeft: "pageOnLeft()",
+    onRight: "pageOnRight()",
+};
+const backSetting = {
+    label: "back",
+    labelFunction: backSettingLabel,
+    onclick: "backSettings()",
+};
+
+const settingsLayout = layouts[0];
 let layout = layouts[0];
 init(layout);
-paintSettings(settings, settingLayout);
+paintSettings(settings, settingsLayout);

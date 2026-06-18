@@ -174,10 +174,14 @@ p {
 
     display: flex;
     flex-direction: row;
-    justify-content: space-around;
+    justify-content: space-between;
     align-items: center;
 
     overflow: hidden;
+
+    padding: 10px;
+    padding: 2vw;
+    padding: min(2vw, 10px);
 }
 
 .spacer {
@@ -286,12 +290,10 @@ p {
 
 .flex-col {
     flex-direction: column;
-    justify-content: space-between;
 }
 
 .flex-row {
     flex-direction: row;
-    justify-content: space-around;
 }
 
 .dark-right {
