@@ -288,7 +288,11 @@ function paintMiniLayout(layout) {
     return playerContainerEl;
 }
 
-let layoutSettings = [];
+let layoutSettings = [
+    { label: "4 players", children: [] },
+    { label: "3 players", children: [] },
+    { label: "2 players", children: [] },
+];
 for (let i = 0; i < layouts.length; i++) {
     const layout = layouts[i];
     const setting = {
@@ -296,15 +300,10 @@ for (let i = 0; i < layouts.length; i++) {
         label: "",
         onclick: `layout = layouts[${i}], init(layout), resetSettings(), toggleSettings();`,
     };
+
     layoutSettings.push(setting);
 }
 
-const settings = {
-    children: [
-        { label: "change layout", children: layoutSettings },
-        { label: "restart game" },
-    ],
-};
 let currentSetting = [];
 let currentPage = 0;
 let totalPages = 0;
@@ -355,6 +354,14 @@ const backSetting = {
     label: "back",
     labelFunction: backSettingLabel,
     onclick: "backSettings()",
+};
+
+const settings = {
+    children: [
+        { label: "change layout", children: layoutSettings },
+        { label: "restart game (soon)" },
+        { label: "more settings (soon)" },
+    ],
 };
 
 const settingsLayout = layouts[0];
