@@ -62,9 +62,11 @@ p {
 
     background: var(--surface);
 
-    border: 5px solid var(--color-background);
-    border: 1vw solid var(--color-background);
-    border: min(1vw, 5px) solid var(--color-background);
+    border: solid var(--color-background);
+
+    border-width: 5px;
+    border-width: 1vw;
+    border-width: min(1vw, 5px);
 
     position: absolute;
     top: 50%;
