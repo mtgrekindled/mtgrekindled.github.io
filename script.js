@@ -24,19 +24,31 @@ const layout2 = {
         c: { direction: "right" },
         d: { direction: "bottom" },
     },
+};
+
+function toggleSettings() {
+    const settingsContainerEl = document.querySelector(".settings-container");
+    const settingsButtonEl = document.querySelector('.toggle-settings-button')
+    if (settingsContainerEl.classList.contains("hidden")) {
+        settingsContainerEl.classList.remove("hidden");
+        settingsButtonEl.classList.add("hidden");
+    } else {
+        settingsContainerEl.classList.add("hidden");
+        settingsButtonEl.classList.remove("hidden");
+    }
 }
 
-function incrementLife(player, amount = 1) {
-    const playerEl = document.getElementById(player);
+function incrementLife(id, amount = 1) {
+    const playerEl = document.getElementById(`player-${id}`);
     const lifeTotalDisplay = playerEl.querySelector(".life-total");
-    playerData[player].lifeTotal += amount;
-    lifeTotalDisplay.innerHTML = playerData[player].lifeTotal;
+    playerData[id].lifeTotal += amount;
+    lifeTotalDisplay.innerHTML = playerData[id].lifeTotal;
 }
 
 function paintPlayer(id, player) {
     const playerEl = document.createElement("div");
     playerEl.classList.add("player");
-    playerEl.id = id;
+    playerEl.id = `player-${id}`;
     playerEl.style.gridArea = id;
 
     const contentEl = document.createElement("div");
@@ -98,10 +110,84 @@ function init(layout) {
     for (let i = 0; i < playerIds.length; i++) {
         const id = playerIds[i];
         playerData[id] = {};
-        playerData[id].lifeTotal = layout.startingLife || 40;
+        if (!playerData[id].lifeTotal !== null) {
+            playerData[id].lifeTotal = layout.startingLife || 40;
+        }
         const child = paintPlayer(id, layout.players[id]);
         playerContainerEl.appendChild(child);
     }
 }
 
+function paintSetting(setting, playerId) {
+    const settingEl = document.createElement("div");
+    settingEl.classList.add("player");
+    settingEl.id = `setting-${setting.label}`;
+    settingEl.style.gridArea = playerId;
+
+    const contentEl = document.createElement("div");
+    contentEl.classList.add("content");
+    settingEl.appendChild(contentEl);
+
+    const isSplit = setting.split;
+
+    if (isSplit) {
+        contentEl.innerHTML += `<p class="symbol small rotate-bottom"><</p>`;
+        settingEl.classList.add("dark-right");
+    }
+
+    contentEl.innerHTML += `<p class="life-total rotate-bottom">${setting.label || "[no label]"}</p>`;
+
+    if (isSplit) {
+        contentEl.innerHTML += `<p class="symbol small rotate-bottom">></p>`;
+        contentEl.innerHTML += `<div class="left clickable" onclick="${setting.onLeft}"></div>
+        <div class="right clickable" onclick="${setting.onRight}"></div>`;
+    }
+
+    return settingEl;
+}
+
+function getAtPosition(tree, position) {
+    let current = tree;
+    for (let i = 0; i < position.length; i++) {
+        current = current.children[position[i]];
+    }
+    return current;
+}
+
+function paintSettings(settings, layout) {
+    const settingsContainerEl = document.querySelector(".settings-container");
+    settingsContainerEl.style.gridTemplateColumns = `repeat(${layout.gridTemplateColumns}, 1fr)`;
+    settingsContainerEl.style.gridTemplateRows = `repeat(${layout.gridTemplateRows}, 1fr)`;
+    settingsContainerEl.style.gridTemplateAreas = layout.gridTemplateAreas;
+    settingsContainerEl.innerHTML = "";
+
+    subSettings = getAtPosition(settings, currentSetting);
+
+    const playerIds = Object.keys(layout.players);
+    const availableSpace = playerIds.length;
+    if (subSettings.length < availableSpace) {
+        for (let i = 0; i < subSettings.length; i++) {
+            const id = playerIds[i];
+            const setting = subSettings[i];
+            const child = paintSetting(setting, id);
+            settingsContainerEl.appendChild(child);
+        }
+    }
+}
+
+function backSettings() {
+    currentSetting.pop();
+    paintSettings(settings, layout);
+}
+
+const settings = [
+    { label: "Layout" },
+    { label: "Restart" },
+    { label: "[empty]" },
+];
+let currentSetting = [];
+const exitSetting = { label: "Exit", onclick: "toggleSettings()" };
+const backSetting = { label: "Back", onclick: "backSettings()" };
+
 init(layout);
+paintSettings(settings, layout)
