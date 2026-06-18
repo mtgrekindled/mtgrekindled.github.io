@@ -1,5 +1,27 @@
-let playerData = {};
+function writeError(e) {
+    const d = new Date();
 
+    const date = d
+        .toLocaleString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+        })
+        .replace(",", "");
+    document.querySelector("#error-log").innerHTML += `<br>[${date}] ${e}`;
+}
+writeError("Error Log");
+window.onerror = function (message, source, line, column, error) {
+    writeError(`${message} - line ${line}:${column} - source ${source}`);
+    show(document.querySelector(".error-log-container"));
+};
+function testError() {
+    throw new Error("testError");
+}
+let playerData = {};
 const layouts = [
     {
         gridTemplateAreas: `"a b" "c d"`,
@@ -123,7 +145,7 @@ const layouts = [
 function rotateLayout90(layout) {
     const rows = layout.gridTemplateAreas
         .match(/"[^"]+"/g)
-        .map((row) => row.replaceAll('"', "").split(/\s+/));
+        .map((row) => replaceAll(row, '"', "").split(/\s+/));
 
     const rotated = rows[0].map((_, i) => rows.map((row) => row[i]).reverse());
 
@@ -163,6 +185,9 @@ function rotateLayout(layout, rotations) {
 function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
 }
+function replaceAll(str, search, replacement) {
+    return str.split(search).join(replacement);
+}
 
 function toggleSettings() {
     const settingsContainerEl = document.querySelector(".settings-container");
@@ -172,8 +197,24 @@ function toggleSettings() {
         // settingsButtonEl.classList.add("hidden");
     } else {
         settingsContainerEl.classList.add("hidden");
+        resetSettings();
         // settingsButtonEl.classList.remove("hidden");
     }
+}
+
+function toggleHidden(el) {
+    if (el.classList.contains("hidden")) {
+        el.classList.remove("hidden");
+    } else {
+        el.classList.add("hidden");
+    }
+}
+
+function show(el) {
+    el.classList.remove("hidden");
+}
+function hide(el) {
+    el.classList.add("hidden");
 }
 
 function incrementLife(id, amount = 1) {
@@ -512,7 +553,32 @@ const settings = {
     children: [
         { label: "change layout", children: [...layoutSettings.values()] },
         { label: "restart game (soon)" },
-        { label: "more settings (soon)" },
+        {
+            label: "more settings",
+            children: [
+                {
+                    label: "debug",
+                    children: [
+                        {
+                            label: "toggle debug",
+                            onclick: `toggleHidden(document.querySelector('.error-log-container'))`,
+                        },
+                        {
+                            label: "test error",
+                            onclick: `testError()`,
+                        },
+                        {
+                            label: "clear log",
+                            onclick: `document.querySelector('#error-log').innerHTML = 'log cleared'`,
+                        },
+                        {
+                            label: "test write",
+                            onclick: `writeError('test')`,
+                        },
+                    ],
+                },
+            ],
+        },
     ],
 };
 
