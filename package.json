@@ -1,0 +1,28 @@
+{
+    "name": "gcse-countdown.github.io",
+    "version": "1.0.0",
+    "description": "",
+    "main": "script.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/mtgrekindled/mtgrekindled.github.io.git"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "type": "commonjs",
+    "bugs": {
+        "url": "https://github.com/mtgrekindled/mtgrekindled.github.io/issues"
+    },
+    "homepage": "https://github.com/mtgrekindled/mtgrekindled.github.io#readme",
+    "devDependencies": {
+        "autoprefixer": "^10.5.0",
+        "cssnano": "^8.0.2",
+        "postcss": "^8.5.15",
+        "postcss-cli": "^11.0.1",
+        "terser": "^5.48.0"
+    }
+}
