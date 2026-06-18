@@ -1,34 +1,36 @@
 let playerData = {};
 let rotated = false;
 
-const layout = {
-    orientation: "portrait",
-    gridTemplateAreas: `"a b" "c d"`,
-    gridTemplateColumns: 2,
-    gridTemplateRows: 2,
-    players: {
-        a: { direction: "left" },
-        b: { direction: "right" },
-        c: { direction: "left" },
-        d: { direction: "right" },
+const layouts = [
+    {
+        orientation: "portrait",
+        gridTemplateAreas: `"a b" "c d"`,
+        gridTemplateColumns: 2,
+        gridTemplateRows: 2,
+        players: {
+            a: { direction: "left" },
+            b: { direction: "right" },
+            c: { direction: "left" },
+            d: { direction: "right" },
+        },
     },
-};
-const layout2 = {
-    orientation: "portrait",
-    gridTemplateAreas: `"a a" "b c" "b c" "d d"`,
-    gridTemplateColumns: 2,
-    gridTemplateRows: 4,
-    players: {
-        a: { direction: "top" },
-        b: { direction: "left" },
-        c: { direction: "right" },
-        d: { direction: "bottom" },
+    {
+        orientation: "portrait",
+        gridTemplateAreas: `"a a" "b c" "b c" "d d"`,
+        gridTemplateColumns: 2,
+        gridTemplateRows: 4,
+        players: {
+            a: { direction: "top" },
+            b: { direction: "left" },
+            c: { direction: "right" },
+            d: { direction: "bottom" },
+        },
     },
-};
+];
 
 function toggleSettings() {
     const settingsContainerEl = document.querySelector(".settings-container");
-    const settingsButtonEl = document.querySelector('.toggle-settings-button')
+    const settingsButtonEl = document.querySelector(".toggle-settings-button");
     if (settingsContainerEl.classList.contains("hidden")) {
         settingsContainerEl.classList.remove("hidden");
         settingsButtonEl.classList.add("hidden");
@@ -45,10 +47,9 @@ function incrementLife(id, amount = 1) {
     lifeTotalDisplay.innerHTML = playerData[id].lifeTotal;
 }
 
-function paintPlayer(id, player) {
+function paintPlayer(id, player, mini = false) {
     const playerEl = document.createElement("div");
     playerEl.classList.add("player");
-    playerEl.id = `player-${id}`;
     playerEl.style.gridArea = id;
 
     const contentEl = document.createElement("div");
@@ -57,50 +58,60 @@ function paintPlayer(id, player) {
 
     const playerDirection = player.direction || "bottom";
 
-    if (playerDirection == "bottom" || playerDirection == "left") {
-        contentEl.innerHTML += `<p class="symbol small rotate-${playerDirection}">-</p>`;
+    if (mini) {
+        contentEl.innerHTML += `
+<svg class="player-svg player-svg-${playerDirection}" viewBox="0 0 100 100">
+    <circle cx="50" cy="30" r="20" fill="currentColor"/>
+    <path d="M10 100 C10 70 30 60 50 60 C70 60 90 70 90 100 Z" fill="currentColor"/>
+</svg>`;
     } else {
-        contentEl.innerHTML += `<p class="symbol small rotate-${playerDirection}">+</p>`;
-    }
+        playerEl.id = `player-${id}`;
 
-    contentEl.innerHTML += `<p class="life-total rotate-${playerDirection}">40</p>`;
+        if (playerDirection == "bottom" || playerDirection == "left") {
+            contentEl.innerHTML += `<p class="symbol small rotate-${playerDirection}">-</p>`;
+        } else {
+            contentEl.innerHTML += `<p class="symbol small rotate-${playerDirection}">+</p>`;
+        }
 
-    if (playerDirection == "bottom" || playerDirection == "left") {
-        contentEl.innerHTML += `<p class="symbol small rotate-${playerDirection}">+</p>`;
-    } else {
-        contentEl.innerHTML += `<p class="symbol small rotate-${playerDirection}">-</p>`;
-    }
+        const startingLife = player.startingLife || 40;
+        contentEl.innerHTML += `<p class="life-total rotate-${playerDirection}">${startingLife}</p>`;
 
-    if (playerDirection == "bottom") {
-        playerEl.classList.add("dark-right");
-        loseLifeClass = "left";
-        gainLifeClass = "right";
-    } else if (playerDirection == "top") {
-        playerEl.classList.add("dark-left");
-        loseLifeClass = "right";
-        gainLifeClass = "left";
-    } else if (playerDirection == "right") {
-        playerEl.classList.add("dark-top");
-        loseLifeClass = "bottom";
-        gainLifeClass = "top";
-    } else if (playerDirection == "left") {
-        playerEl.classList.add("dark-bottom");
-        loseLifeClass = "top";
-        gainLifeClass = "bottom";
-    }
+        if (playerDirection == "bottom" || playerDirection == "left") {
+            contentEl.innerHTML += `<p class="symbol small rotate-${playerDirection}">+</p>`;
+        } else {
+            contentEl.innerHTML += `<p class="symbol small rotate-${playerDirection}">-</p>`;
+        }
 
-    if (playerDirection == "left" || playerDirection == "right") {
-        contentEl.classList.add("flex-col");
-    }
+        if (playerDirection == "bottom") {
+            playerEl.classList.add("dark-right");
+            loseLifeClass = "left";
+            gainLifeClass = "right";
+        } else if (playerDirection == "top") {
+            playerEl.classList.add("dark-left");
+            loseLifeClass = "right";
+            gainLifeClass = "left";
+        } else if (playerDirection == "right") {
+            playerEl.classList.add("dark-top");
+            loseLifeClass = "bottom";
+            gainLifeClass = "top";
+        } else if (playerDirection == "left") {
+            playerEl.classList.add("dark-bottom");
+            loseLifeClass = "top";
+            gainLifeClass = "bottom";
+        }
 
-    contentEl.innerHTML += `<div class="${loseLifeClass} clickable" onclick="incrementLife('${id}', -1)"></div>
+        if (playerDirection == "left" || playerDirection == "right") {
+            contentEl.classList.add("flex-col");
+        }
+
+        contentEl.innerHTML += `<div class="${loseLifeClass} clickable" onclick="incrementLife('${id}', -1)"></div>
         <div class="${gainLifeClass} clickable" onclick="incrementLife('${id}', 1)"></div>`;
-
+    }
     return playerEl;
 }
 
 function init(layout) {
-    const playerContainerEl = document.querySelector(".player-container");
+    const playerContainerEl = document.querySelector("#player-container");
     playerContainerEl.style.gridTemplateColumns = `repeat(${layout.gridTemplateColumns}, 1fr)`;
     playerContainerEl.style.gridTemplateRows = `repeat(${layout.gridTemplateRows}, 1fr)`;
     playerContainerEl.style.gridTemplateAreas = layout.gridTemplateAreas;
@@ -109,7 +120,9 @@ function init(layout) {
     const playerIds = Object.keys(layout.players);
     for (let i = 0; i < playerIds.length; i++) {
         const id = playerIds[i];
-        playerData[id] = {};
+        if (!playerData[id]) {
+            playerData[id] = {};
+        }
         if (!playerData[id].lifeTotal !== null) {
             playerData[id].lifeTotal = layout.startingLife || 40;
         }
@@ -135,12 +148,17 @@ function paintSetting(setting, playerId) {
         settingEl.classList.add("dark-right");
     }
 
-    contentEl.innerHTML += `<p class="life-total rotate-bottom">${setting.label || "[no label]"}</p>`;
+    if (setting.render) {
+        contentEl.appendChild(setting.render);
+    }
+    contentEl.innerHTML += `<p class="life-total small word-wrap rotate-bottom">${setting.label || "[no label]"}</p>`;
 
     if (isSplit) {
         contentEl.innerHTML += `<p class="symbol small rotate-bottom">></p>`;
         contentEl.innerHTML += `<div class="left clickable" onclick="${setting.onLeft}"></div>
         <div class="right clickable" onclick="${setting.onRight}"></div>`;
+    } else if (setting.onclick) {
+        contentEl.innerHTML += `<div class="full clickable" onclick="${setting.onclick}"></div>`;
     }
 
     return settingEl;
@@ -172,22 +190,59 @@ function paintSettings(settings, layout) {
             const child = paintSetting(setting, id);
             settingsContainerEl.appendChild(child);
         }
+        if (currentSetting.length == 0) {
+            const id = playerIds[availableSpace - 1];
+            const child = paintSetting(exitSetting, id);
+            settingsContainerEl.appendChild(child);
+        }
     }
 }
 
 function backSettings() {
     currentSetting.pop();
-    paintSettings(settings, layout);
+    paintSettings(settings, settingLayout);
+}
+
+function paintMiniLayout(layout) {
+    const playerContainerEl = document.createElement("div");
+    playerContainerEl.classList.add("grid", "player-container", "mini");
+    playerContainerEl.style.gridTemplateColumns = `repeat(${layout.gridTemplateColumns}, 1fr)`;
+    playerContainerEl.style.gridTemplateRows = `repeat(${layout.gridTemplateRows}, 1fr)`;
+    playerContainerEl.style.gridTemplateAreas = layout.gridTemplateAreas;
+    playerContainerEl.style.background = `var(--color-background)`;
+
+    const playerIds = Object.keys(layout.players);
+    for (let i = 0; i < playerIds.length; i++) {
+        const id = playerIds[i];
+        player = layout.players[id];
+        player.startingLife = layout.startingLife || 40;
+        const child = paintPlayer(id, player, (mini = true));
+        playerContainerEl.appendChild(child);
+    }
+
+    return playerContainerEl;
+}
+
+let layoutSettings = [];
+for (let i = 0; i < layouts.length; i++) {
+    const layout = layouts[i];
+    const setting = {
+        render: paintMiniLayout(layout),
+        label: "layout",
+    };
+    layoutSettings.push(setting);
 }
 
 const settings = [
-    { label: "Layout" },
-    { label: "Restart" },
-    { label: "[empty]" },
+    { label: "change layout", children: layoutSettings },
+    { label: "restart game" },
+    layoutSettings[1],
 ];
 let currentSetting = [];
 const exitSetting = { label: "Exit", onclick: "toggleSettings()" };
 const backSetting = { label: "Back", onclick: "backSettings()" };
 
+const settingLayout = layouts[0]
+const layout = layouts[1];
 init(layout);
-paintSettings(settings, layout)
+paintSettings(settings, settingLayout);
