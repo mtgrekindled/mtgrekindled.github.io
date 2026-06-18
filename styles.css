@@ -1,0 +1,183 @@
+*,
+::before,
+::after {
+    box-sizing: border-box;
+}
+
+body {
+    padding: 0px;
+    margin: 0px;
+    overflow: hidden;
+
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+:root {
+    --color-background: #000000;
+    --text: #ffffff;
+    --text-dim: #aaaaaa;
+    --surface: #1d1d1d;
+    --surface2: #323232;
+}
+
+.container {
+    padding: 5px;
+
+    height: 100%;
+    height: 100vh;
+    height: 100dvh;
+
+    width: 100%;
+    width: 100vw;
+    width: 100dvw;
+
+    background-color: #000000;
+    background-color: var(--color-background);
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 5px;
+
+    height: 100%;
+    width: 100%;
+}
+
+.player {
+    background-color: var(--surface);
+    background: var(--surface);
+    border-radius: 20px;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    position: relative;
+}
+
+.content {
+    width: 100%;
+    height: 100%;
+
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+    align-items: center;
+
+    overflow: hidden;
+}
+
+.content p {
+    padding: 0px;
+    margin: 0px;
+
+    font-size: 125px;
+    font-size: 15vw;
+
+    font-weight: bold;
+    font-weight: 700;
+
+    font-family:
+        "Bookerly", "Caecilia", "Calibri", "Arial", sans-serif,
+        serif, monospace, "Comic Sans MS";
+
+    color: #ffffff;
+    color: var(--text);
+
+    text-align: center;
+}
+
+.player p.small {
+    font-size: 75px;
+    font-size: 7vw;
+    font-size: min(10vw, 150px);
+
+    font-weight: normal;
+    font-weight: 400;
+
+    color: #aaaaaa;
+    color: var(--text-dim);
+}
+
+.clickable {
+    z-index: 10;
+}
+
+.left,
+.right {
+    position: absolute;
+    top: 0;
+    width: 50%;
+    height: 100%;
+}
+
+.top,
+.bottom {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 50%;
+}
+
+.left {
+    left: 0;
+}
+
+.right {
+    right: 0;
+}
+
+.top {
+    top: 0;
+}
+
+.bottom {
+    bottom: 0;
+}
+
+.flex-col {
+    flex-direction: column;
+}
+
+.flex-row {
+    flex-direction: row;
+}
+
+.dark-right {
+    background: linear-gradient(90deg, var(--surface) 50%, var(--surface2) 50%);
+}
+
+.dark-left {
+    background: linear-gradient(270deg, var(--surface) 50%, var(--surface2) 50%);
+}
+
+.dark-top {
+    background: linear-gradient(180deg, var(--surface) 50%, var(--surface2) 50%);
+}
+
+.dark-bottom {
+    background: linear-gradient(0deg, var(--surface) 50%, var(--surface2) 50%);
+}
+
+.rotate-left {
+    transform: rotate(90deg);
+    transform-origin: center;
+}
+.rotate-right {
+    transform: rotate(270deg);
+    transform-origin: center;
+}
+.rotate-top {
+    transform: rotate(180deg);
+    transform-origin: center;
+}
+/* .rotate-bottom {
+    transform: rotate(0deg);
+    transform-origin: center;
+} */
