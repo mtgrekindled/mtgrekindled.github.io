@@ -417,7 +417,7 @@ function generateRotateLayouts() {
     currentLayout = rotateLayout(currentLayout, layoutRotation);
     const maxRotations = layouts[layoutIndex].maxRotations || 4;
     for (let i = 1; i <= maxRotations - 1; i++) {
-        currentRotation = (layoutRotation + i) % maxRotations;
+        let currentRotation = (layoutRotation + i) % maxRotations;
         currentLayout = rotateLayout(currentLayout, 1);
         let setting = {
             render: paintMiniLayout(currentLayout),
