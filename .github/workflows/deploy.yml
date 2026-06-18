@@ -30,7 +30,7 @@ jobs:
 
             - name: Build assets
               run: |
-                #   echo "module.exports = { plugins: [require('autoprefixer'), require('cssnano')({preset: 'default'})] };" > postcss.config.js
+                  echo "module.exports = { plugins: [require('autoprefixer'), require('cssnano')({preset: 'default'})] };" > postcss.config.js
                   npx postcss styles.css -o styles.min.css
                   npx terser script.js -o script.min.js -c -m
                   VERSION=$(date +%s)

@@ -1,9 +1,7 @@
 let playerData = {};
-let rotated = false;
 
 const layouts = [
     {
-        preferOrientation: "portrait",
         gridTemplateAreas: `"a b" "c d"`,
         gridTemplateColumns: 2,
         gridTemplateRows: 2,
@@ -13,9 +11,9 @@ const layouts = [
             c: { direction: "left" },
             d: { direction: "right" },
         },
+        maxRotations: 2,
     },
     {
-        preferOrientation: "portrait",
         gridTemplateAreas: `"a a" "b c" "b c" "d d"`,
         gridTemplateColumns: 2,
         gridTemplateRows: 4,
@@ -25,9 +23,9 @@ const layouts = [
             c: { direction: "right" },
             d: { direction: "bottom" },
         },
+        maxRotations: 2,
     },
     {
-        preferOrientation: "portrait",
         gridTemplateAreas: `"a" "b"`,
         gridTemplateColumns: 1,
         gridTemplateRows: 2,
@@ -36,19 +34,131 @@ const layouts = [
             b: { direction: "bottom" },
         },
         startingLife: 20,
+        maxRotations: 2,
     },
     {
-        preferOrientation: "landscape",
-        gridTemplateAreas: `"a b"`,
+        gridTemplateAreas: `"a b" "c ."`,
         gridTemplateColumns: 2,
-        gridTemplateRows: 1,
+        gridTemplateRows: 2,
         players: {
             a: { direction: "left" },
             b: { direction: "right" },
+            c: { direction: "left" },
         },
-        startingLife: 20,
+    },
+    {
+        gridTemplateAreas: `"a b" ". c"`,
+        gridTemplateColumns: 2,
+        gridTemplateRows: 2,
+        players: {
+            a: { direction: "left" },
+            b: { direction: "right" },
+            c: { direction: "right" },
+        },
+    },
+    {
+        gridTemplateAreas: `"a ." "b c"`,
+        gridTemplateColumns: 2,
+        gridTemplateRows: 2,
+        players: {
+            a: { direction: "left" },
+            b: { direction: "left" },
+            c: { direction: "right" },
+        },
+    },
+    {
+        gridTemplateAreas: `". a" "b c"`,
+        gridTemplateColumns: 2,
+        gridTemplateRows: 2,
+        players: {
+            a: { direction: "right" },
+            b: { direction: "left" },
+            c: { direction: "right" },
+        },
+    },
+    {
+        gridTemplateAreas: `"a b" "a b" "c c"`,
+        gridTemplateColumns: 2,
+        gridTemplateRows: 3,
+        players: {
+            a: { direction: "left" },
+            b: { direction: "right" },
+            c: { direction: "bottom" },
+        },
+    },
+    {
+        gridTemplateAreas: `"a a" "b c" "b c"`,
+        gridTemplateColumns: 2,
+        gridTemplateRows: 3,
+        players: {
+            a: { direction: "top" },
+            b: { direction: "left" },
+            c: { direction: "right" },
+        },
+    },
+    // {
+    //     gridTemplateAreas: `"a"`,
+    //     gridTemplateColumns: 1,
+    //     gridTemplateRows: 1,
+    //     players: {
+    //         a: { direction: "bottom" },
+    //     },
+    // },
+    {
+        gridTemplateAreas: `"a b" "c d" "e f"`,
+        gridTemplateColumns: 2,
+        gridTemplateRows: 3,
+        players: {
+            a: { direction: "left" },
+            b: { direction: "right" },
+            c: { direction: "left" },
+            d: { direction: "right" },
+            e: { direction: "left" },
+            f: { direction: "right" },
+        },
+        maxRotations: 2,
     },
 ];
+
+function rotateLayout90(layout) {
+    const rows = layout.gridTemplateAreas
+        .match(/"[^"]+"/g)
+        .map((row) => row.replaceAll('"', "").split(/\s+/));
+
+    const rotated = rows[0].map((_, i) => rows.map((row) => row[i]).reverse());
+
+    const newLayout = {
+        ...layout,
+        gridTemplateAreas: rotated.map((row) => `"${row.join(" ")}"`).join(" "),
+        gridTemplateColumns: layout.gridTemplateRows,
+        gridTemplateRows: layout.gridTemplateColumns,
+        players: {},
+    };
+
+    const directionMap = {
+        top: "right",
+        right: "bottom",
+        bottom: "left",
+        left: "top",
+    };
+
+    for (const [id, player] of Object.entries(layout.players)) {
+        newLayout.players[id] = {
+            ...player,
+            direction: directionMap[player.direction],
+        };
+    }
+
+    return newLayout;
+}
+
+function rotateLayout(layout, rotations) {
+    let current = layout;
+    for (let i = 0; i < rotations % (layout.maxRotations || 4); i++) {
+        current = rotateLayout90(current);
+    }
+    return current;
+}
 
 function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
@@ -59,10 +169,10 @@ function toggleSettings() {
     const settingsButtonEl = document.querySelector(".toggle-settings-button");
     if (settingsContainerEl.classList.contains("hidden")) {
         settingsContainerEl.classList.remove("hidden");
-        settingsButtonEl.classList.add("hidden");
+        // settingsButtonEl.classList.add("hidden");
     } else {
         settingsContainerEl.classList.add("hidden");
-        settingsButtonEl.classList.remove("hidden");
+        // settingsButtonEl.classList.remove("hidden");
     }
 }
 
@@ -139,7 +249,9 @@ function paintPlayer(id, player, mini = false) {
     return playerEl;
 }
 
-function init(layout) {
+function init() {
+    let layout = layouts[layoutIndex];
+    layout = rotateLayout(layout, layoutRotation);
     const playerContainerEl = document.querySelector("#player-container");
     playerContainerEl.style.gridTemplateColumns = `repeat(${layout.gridTemplateColumns}, 1fr)`;
     playerContainerEl.style.gridTemplateRows = `repeat(${layout.gridTemplateRows}, 1fr)`;
@@ -186,8 +298,8 @@ function paintSetting(setting, playerId, settingIndex) {
         contentEl.appendChild(setting.render);
     }
     const label = setting.labelFunction
-            ? setting.labelFunction()
-            : setting.label;
+        ? setting.labelFunction()
+        : setting.label;
     contentEl.innerHTML += `<p class="life-total small word-wrap rotate-bottom">${label}</p>`;
 
     if (isSplit) {
@@ -220,14 +332,18 @@ function paintSettings(settings, layout) {
     settingsContainerEl.style.gridTemplateAreas = layout.gridTemplateAreas;
     settingsContainerEl.innerHTML = "";
 
-    subSettings = getAtPosition(settings, currentSetting).children;
+    const subSetting = getAtPosition(settings, currentSetting);
+    let subSettingChildren = subSetting.children;
+    if (subSetting.childrenFunction) {
+        subSettingChildren = subSetting.childrenFunction();
+    }
 
     const playerIds = Object.keys(layout.players);
     const availableSpace = playerIds.length;
-    if (subSettings.length < availableSpace) {
-        for (let i = 0; i < subSettings.length; i++) {
+    if (subSettingChildren.length < availableSpace) {
+        for (let i = 0; i < subSettingChildren.length; i++) {
             const id = playerIds[i];
-            const setting = subSettings[i];
+            const setting = subSettingChildren[i];
             const child = paintSetting(setting, id, i);
             settingsContainerEl.appendChild(child);
         }
@@ -236,17 +352,18 @@ function paintSettings(settings, layout) {
         const child = paintSetting(backSetting, id, i);
         settingsContainerEl.appendChild(child);
     } else {
-        totalPages = Math.ceil(subSettings.length / (availableSpace - 1));
-        currentPage = clamp(currentPage, 0, totalPages);
+        totalPages =
+            Math.ceil(subSettingChildren.length / (availableSpace - 1)) || 0;
+        currentPage = clamp(currentPage, 0, totalPages) || 0;
 
         offset = currentPage * (availableSpace - 1);
         for (
             let i = 0;
-            i < availableSpace - 1 && i + offset < subSettings.length;
+            i < availableSpace - 1 && i + offset < subSettingChildren.length;
             i++
         ) {
             const id = playerIds[i];
-            const setting = subSettings[i + offset];
+            const setting = subSettingChildren[i + offset];
             const child = paintSetting(setting, id, i + offset);
             settingsContainerEl.appendChild(child);
         }
@@ -294,20 +411,49 @@ function paintMiniLayout(layout) {
     return playerContainerEl;
 }
 
-let layoutSettings = [
-    { label: "4 players", children: [] },
-    { label: "3 players", children: [] },
-    { label: "2 players", children: [] },
-];
+function generateRotateLayouts() {
+    let children = [];
+    let currentLayout = layouts[layoutIndex];
+    currentLayout = rotateLayout(currentLayout, layoutRotation);
+    const maxRotations = layouts[layoutIndex].maxRotations || 4;
+    for (let i = 1; i <= maxRotations - 1; i++) {
+        currentRotation = (layoutRotation + i) % maxRotations;
+        currentLayout = rotateLayout(currentLayout, 1);
+        let setting = {
+            render: paintMiniLayout(currentLayout),
+            label: "",
+            onclick: `layoutRotation = ${currentRotation}, init(), resetSettings(), toggleSettings();`,
+        };
+        children.push(setting);
+    }
+    return children;
+}
+
+let layoutSettings = new Map([
+    [
+        0,
+        {
+            label: "rotate",
+            children: [],
+            childrenFunction: generateRotateLayouts,
+        },
+    ],
+    [4, { label: "4 players", children: [] }],
+    [2, { label: "2 players", children: [] }],
+    [3, { label: "3 players", children: [] }],
+    // [1, { label: "1 player (soon)", children: [] }],
+    [5, { label: "5 players (soon)", children: [] }],
+    [6, { label: "6 players", children: [] }],
+]);
 for (let i = 0; i < layouts.length; i++) {
     const layout = layouts[i];
     const setting = {
         render: paintMiniLayout(layout),
         label: "",
-        onclick: `layout = layouts[${i}], init(layout), resetSettings(), toggleSettings();`,
+        onclick: `layoutIndex = ${i}, layoutRotation = 0, init(), resetSettings(), toggleSettings();`,
     };
-
-    layoutSettings.push(setting);
+    const players = Object.keys(layout.players).length;
+    layoutSettings.get(players).children.push(setting);
 }
 
 let currentSetting = [];
@@ -364,13 +510,14 @@ const backSetting = {
 
 const settings = {
     children: [
-        { label: "change layout", children: layoutSettings },
+        { label: "change layout", children: [...layoutSettings.values()] },
         { label: "restart game (soon)" },
         { label: "more settings (soon)" },
     ],
 };
 
 const settingsLayout = layouts[0];
-let layout = layouts[0];
-init(layout);
+let layoutIndex = 0;
+let layoutRotation = 0;
+init();
 paintSettings(settings, settingsLayout);

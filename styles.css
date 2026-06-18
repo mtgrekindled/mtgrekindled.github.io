@@ -64,13 +64,14 @@ p {
 
     border: 5px solid var(--color-background);
     border: 1vw solid var(--color-background);
+    border: min(1vw, 5px) solid var(--color-background);
 
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%) rotate(45deg);
 
-    z-index: 20;
+    z-index: 50;
 }
 
 .grid {
@@ -211,6 +212,7 @@ p {
 .player p.symbol {
     font-size: 75px;
     font-size: 10vw;
+    font-size: min(10vw, 75px);
 
     font-weight: normal;
     font-weight: 400;
@@ -224,8 +226,9 @@ p {
 }
 
 .player p.small {
-    font-size: 25px;
+    font-size: 50px;
     font-size: 10vw;
+    font-size: min(50px, 10vw);
 
     font-weight: normal;
     font-weight: 400;
