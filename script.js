@@ -175,7 +175,9 @@ function paintSetting(setting, playerId, settingIndex) {
     const isSplit = setting.split;
 
     if (isSplit) {
-        const symbolLeft = setting.leftLabelFunction?.() || "<";
+        const symbolLeft = setting.leftLabelFunction
+            ? setting.leftLabelFunction()
+            : "<";
         contentEl.innerHTML += `<p class="symbol rotate-bottom">${symbolLeft}</p>`;
         settingEl.classList.add("dark-right");
     }
@@ -183,11 +185,15 @@ function paintSetting(setting, playerId, settingIndex) {
     if (setting.render) {
         contentEl.appendChild(setting.render);
     }
-    const label = setting.labelFunction?.() || setting.label;
+    const label = setting.labelFunction
+            ? setting.labelFunction()
+            : setting.label;
     contentEl.innerHTML += `<p class="life-total small word-wrap rotate-bottom">${label}</p>`;
 
     if (isSplit) {
-        const symbolRight = setting.rightLabelFunction?.() || ">";
+        const symbolRight = setting.rightLabelFunction
+            ? setting.rightLabelFunction()
+            : ">";
         contentEl.innerHTML += `<p class="symbol rotate-bottom">${symbolRight}</p>`;
         contentEl.innerHTML += `<div class="left clickable" onclick="${setting.onLeft}"></div>
         <div class="right clickable" onclick="${setting.onRight}"></div>`;
