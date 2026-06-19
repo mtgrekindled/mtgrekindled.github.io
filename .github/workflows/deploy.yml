@@ -38,6 +38,15 @@ jobs:
                   mv script.min.js script.min.$VERSION.js
                   echo "VERSION=$VERSION" >> $GITHUB_ENV
 
+            - name: Generate build info
+              run: |
+                  cat > build-info.js << EOF
+                  window.BUILD_INFO = {
+                      hash: "${GITHUB_SHA::7}",
+                      timestamp: "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+                  };
+                  EOF
+
             - name: Update HTML
               run: |
                   sed -i "s/styles\.css/styles.min.${VERSION}.css/g" index.html
@@ -49,6 +58,7 @@ jobs:
                     cp index.html site/
                     cp styles.min.${VERSION}.css site/
                     cp script.min.${VERSION}.js site/
+                    cp build-info.js site/
 
             - name: Setup Pages
               uses: actions/configure-pages@v5

@@ -1,34 +1,53 @@
 function writeLog(e) {
     if (errorTimestamp) {
         const d = new Date();
-
+        
         const date = d
-            .toLocaleString("en-GB", {
-                day: "2-digit",
-                month: "short",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-            })
-            .replace(",", "");
+        .toLocaleString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+        })
+        .replace(",", "");
         document.querySelector("#error-log").innerHTML += `<br>[${date}] ${e}`;
     } else {
         document.querySelector("#error-log").innerHTML += `<br>${e}`;
     }
 }
+
+
 let errorTimestamp = true;
 let errorSource = false;
-writeLog("Error Log");
+
+
 window.onerror = function (message, source, line, column, error) {
     writeLog(
         `${message} - line ${line}:${column} ${errorSource ? `- source ${source}` : ""}`,
     );
     show(document.querySelector(".error-log-container"));
 };
+
+if (!window.BUILD_INFO) {
+    window.BUILD_INFO = {
+        hash: "dev",
+        timestamp: "local"
+    };
+}
+
+writeLog("Error Log");
+
 function testError() {
     throw new Error("testError");
 }
+
+function testCurrentBuild() {
+    writeLog(`commit: ${BUILD_INFO.hash} (${BUILD_INFO.timestamp})`)
+}
+testCurrentBuild();
+
 let playerData = {};
 const layouts = [
     {
@@ -574,6 +593,10 @@ const settings = {
                         {
                             label: "clear log",
                             onclick: `document.querySelector('#error-log').innerHTML = 'log cleared'`,
+                        },
+                        {
+                            label: "log current build",
+                            onclick: `testCurrentBuild()`,
                         },
                         {
                             label: "toggle source",
