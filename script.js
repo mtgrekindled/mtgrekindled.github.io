@@ -87,6 +87,35 @@ const original_layouts = [
         maxRotations: 2,
     },
     {
+        gridTemplateAreas: `"a"`,
+        gridTemplateColumns: 1,
+        gridTemplateRows: 1,
+        players: {
+            a: { direction: "bottom" },
+        },
+    },
+    {
+        gridTemplateAreas: `"a" "b"`,
+        gridTemplateColumns: 1,
+        gridTemplateRows: 2,
+        players: {
+            a: { direction: "left" },
+            b: { direction: "left" },
+        },
+        startingLife: 20,
+    },
+    {
+        gridTemplateAreas: `"a" "b"`,
+        gridTemplateColumns: 1,
+        gridTemplateRows: 2,
+        players: {
+            a: { direction: "left" },
+            b: { direction: "right" },
+        },
+        startingLife: 20,
+        maxRotations: 2,
+    },
+    {
         gridTemplateAreas: `"a b" "c ."`,
         gridTemplateColumns: 2,
         gridTemplateRows: 2,
@@ -94,36 +123,6 @@ const original_layouts = [
             a: { direction: "left" },
             b: { direction: "right" },
             c: { direction: "left" },
-        },
-    },
-    {
-        gridTemplateAreas: `"a b" ". c"`,
-        gridTemplateColumns: 2,
-        gridTemplateRows: 2,
-        players: {
-            a: { direction: "left" },
-            b: { direction: "right" },
-            c: { direction: "right" },
-        },
-    },
-    {
-        gridTemplateAreas: `"a ." "b c"`,
-        gridTemplateColumns: 2,
-        gridTemplateRows: 2,
-        players: {
-            a: { direction: "left" },
-            b: { direction: "left" },
-            c: { direction: "right" },
-        },
-    },
-    {
-        gridTemplateAreas: `". a" "b c"`,
-        gridTemplateColumns: 2,
-        gridTemplateRows: 2,
-        players: {
-            a: { direction: "right" },
-            b: { direction: "left" },
-            c: { direction: "right" },
         },
     },
     {
@@ -136,24 +135,6 @@ const original_layouts = [
             c: { direction: "bottom" },
         },
     },
-    {
-        gridTemplateAreas: `"a a" "b c" "b c"`,
-        gridTemplateColumns: 2,
-        gridTemplateRows: 3,
-        players: {
-            a: { direction: "top" },
-            b: { direction: "left" },
-            c: { direction: "right" },
-        },
-    },
-    // {
-    //     gridTemplateAreas: `"a"`,
-    //     gridTemplateColumns: 1,
-    //     gridTemplateRows: 1,
-    //     players: {
-    //         a: { direction: "bottom" },
-    //     },
-    // },
     {
         gridTemplateAreas: `"a b" "c d" "e f"`,
         gridTemplateColumns: 2,
@@ -183,6 +164,72 @@ const original_layouts = [
             h: { direction: "right" },
         },
         maxRotations: 2,
+    },
+    {
+        gridTemplateAreas: `"a b c d" "e . . f" "g . . h" "i j k l"`,
+        gridTemplateColumns: 4,
+        gridTemplateRows: 4,
+        players: {
+            a: { direction: "left" },
+            b: { direction: "top" },
+            c: { direction: "top" },
+            d: { direction: "right" },
+            e: { direction: "left" },
+            f: { direction: "right" },
+            g: { direction: "left" },
+            h: { direction: "right" },
+            i: { direction: "left" },
+            j: { direction: "bottom" },
+            k: { direction: "bottom" },
+            l: { direction: "right" },
+        },
+        maxRotations: 2,
+        uselessLayout: true,
+    },
+    {
+        gridTemplateAreas: `"a  b  c  d  e  f" "g  h  i  j  k  l" "m  n  o  p  q  r" "s  t  u  v  w  x" "y  z  aa ab ac ad" "ae af ag ah ai aj"`,
+        gridTemplateColumns: 6,
+        gridTemplateRows: 6,
+        players: {
+            a: {},
+            b: {},
+            c: {},
+            d: {},
+            e: {},
+            f: {},
+            g: {},
+            h: {},
+            i: {},
+            j: {},
+            k: {},
+            l: {},
+            m: {},
+            n: {},
+            o: {},
+            p: {},
+            q: {},
+            r: {},
+            s: {},
+            t: {},
+            u: {},
+            v: {},
+            w: {},
+            x: {},
+            y: {},
+            z: {},
+            aa: {},
+            ab: {},
+            ac: {},
+            ad: {},
+            ae: {},
+            af: {},
+            ag: {},
+            ah: {},
+            ai: {},
+            aj: {},
+        },
+        maxRotations: 1,
+        uselessLayout: true,
     },
 ];
 
@@ -276,10 +323,12 @@ function incrementLife(id, amount = 1) {
     lifeTotalDisplay.innerHTML = playerData[id].lifeTotal;
 }
 
-function paintPlayer(id, player, mini = false) {
+function paintPlayer(id, player, mini = false, gridTemplateAreas = true) {
     const playerEl = document.createElement("div");
     playerEl.classList.add("player");
-    playerEl.style.gridArea = id;
+    if (gridTemplateAreas) {
+        playerEl.style.gridArea = id;
+    }
 
     const contentEl = document.createElement("div");
     contentEl.classList.add("content");
@@ -428,7 +477,7 @@ function paintSetting(setting, playerId, settingIndex) {
             on_click += setting.onclick;
         }
         if (setting.children) {
-            on_click += `currentSetting.push(${settingIndex});`;
+            on_click += `currentPage = 0;totalPages = 0;currentSetting.push(${settingIndex});`;
         }
         if (on_click) {
             if (!setting.norepaint) {
@@ -555,12 +604,12 @@ for (let i = 0; i < original_layouts.length; i++) {
 
 let layoutSettings = new Map([
     [4, { label: "4 players", children: [] }],
-    [2, { label: "2 players", children: [] }],
+    [2, { label: "1-2 players", children: [] }],
     [3, { label: "3 players", children: [] }],
-    // [1, { label: "1 player (soon)", children: [] }],
     [5, { label: "5 players (soon)", children: [] }],
     [6, { label: "6 players", children: [] }],
-    [7, { label: ">6 players", children: [] }],
+    [8, { label: "8 players", children: [] }],
+    [0, { label: "useless/funny layouts", children: [] }],
 ]);
 for (let i = 0; i < layouts.length; i++) {
     const layout = layouts[i];
@@ -570,8 +619,10 @@ for (let i = 0; i < layouts.length; i++) {
         onclick: `layoutIndex = ${i};init();exitSettings();`,
     };
     const players = Object.keys(layout.players).length;
-    if (players > 6) {
-        layoutSettings.get(7).children.push(setting);
+    if (layout.uselessLayout) {
+        layoutSettings.get(0).children.push(setting);
+    } else if (players === 1) {
+        layoutSettings.get(2).children.push(setting);
     } else {
         layoutSettings.get(players).children.push(setting);
     }
