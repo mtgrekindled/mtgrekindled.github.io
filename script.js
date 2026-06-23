@@ -1,39 +1,40 @@
-function writeLog(e) {
+function writeLog(e, showLog = false) {
     if (errorTimestamp) {
         const d = new Date();
-        
+
         const date = d
-        .toLocaleString("en-GB", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-        })
-        .replace(",", "");
+            .toLocaleString("en-GB", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+            })
+            .replace(",", "");
         document.querySelector("#error-log").innerHTML += `<br>[${date}] ${e}`;
     } else {
         document.querySelector("#error-log").innerHTML += `<br>${e}`;
     }
+    if (showLog) {
+        show(document.querySelector(".error-log-container"));
+    }
 }
-
 
 let errorTimestamp = true;
 let errorSource = false;
 
-
 window.onerror = function (message, source, line, column, error) {
     writeLog(
         `${message} - line ${line}:${column} ${errorSource ? `- source ${source}` : ""}`,
+        (showLog = true),
     );
-    show(document.querySelector(".error-log-container"));
 };
 
 if (!window.BUILD_INFO) {
     window.BUILD_INFO = {
         hash: "dev",
-        timestamp: "local"
+        timestamp: "local",
     };
 }
 
@@ -44,12 +45,12 @@ function testError() {
 }
 
 function testCurrentBuild() {
-    writeLog(`commit: ${BUILD_INFO.hash} (${BUILD_INFO.timestamp})`)
+    writeLog(`commit: ${BUILD_INFO.hash} (${BUILD_INFO.timestamp})`);
 }
 testCurrentBuild();
 
 let playerData = {};
-const layouts = [
+const original_layouts = [
     {
         gridTemplateAreas: `"a b" "c d"`,
         gridTemplateColumns: 2,
@@ -167,6 +168,22 @@ const layouts = [
         },
         maxRotations: 2,
     },
+    {
+        gridTemplateAreas: `"a b" "c d" "e f" "g h"`,
+        gridTemplateColumns: 2,
+        gridTemplateRows: 4,
+        players: {
+            a: { direction: "left" },
+            b: { direction: "right" },
+            c: { direction: "left" },
+            d: { direction: "right" },
+            e: { direction: "left" },
+            f: { direction: "right" },
+            g: { direction: "left" },
+            h: { direction: "right" },
+        },
+        maxRotations: 2,
+    },
 ];
 
 function rotateLayout90(layout) {
@@ -218,15 +235,23 @@ function replaceAll(str, search, replacement) {
 
 function toggleSettings() {
     const settingsContainerEl = document.querySelector(".settings-container");
-    const settingsButtonEl = document.querySelector(".toggle-settings-button");
     if (settingsContainerEl.classList.contains("hidden")) {
         settingsContainerEl.classList.remove("hidden");
-        // settingsButtonEl.classList.add("hidden");
     } else {
         settingsContainerEl.classList.add("hidden");
-        resetSettings();
-        // settingsButtonEl.classList.remove("hidden");
+        resetCurrentSetting();
     }
+}
+
+function exitSettings() {
+    const settingsContainerEl = document.querySelector(".settings-container");
+    settingsContainerEl.classList.add("hidden");
+    resetCurrentSetting();
+}
+
+function enterSettings() {
+    const settingsContainerEl = document.querySelector(".settings-container");
+    settingsContainerEl.classList.remove("hidden");
 }
 
 function toggleHidden(el) {
@@ -317,9 +342,22 @@ function paintPlayer(id, player, mini = false) {
     return playerEl;
 }
 
+function restartGame() {
+    let layout = layouts[layoutIndex];
+    const playerContainerEl = document.querySelector("#player-container");
+    playerContainerEl.innerHTML = "";
+    const playerIds = Object.keys(layout.players);
+    for (let i = 0; i < playerIds.length; i++) {
+        const id = playerIds[i];
+        playerData[id] = {};
+        playerData[id].lifeTotal = layout.startingLife || 40;
+        const child = paintPlayer(id, layout.players[id]);
+        playerContainerEl.appendChild(child);
+    }
+}
+
 function init() {
     let layout = layouts[layoutIndex];
-    layout = rotateLayout(layout, layoutRotation);
     const playerContainerEl = document.querySelector("#player-container");
     playerContainerEl.style.gridTemplateColumns = `repeat(${layout.gridTemplateColumns}, 1fr)`;
     playerContainerEl.style.gridTemplateRows = `repeat(${layout.gridTemplateRows}, 1fr)`;
@@ -329,10 +367,10 @@ function init() {
     const playerIds = Object.keys(layout.players);
     for (let i = 0; i < playerIds.length; i++) {
         const id = playerIds[i];
-        if (!playerData[id]) {
+        if (!(id in playerData)) {
             playerData[id] = {};
         }
-        if (!playerData[id].lifeTotal !== null) {
+        if (!playerData[id].lifeTotal && playerData[id].lifeTotal !== 0) {
             playerData[id].lifeTotal = layout.startingLife || 40;
         }
         const child = paintPlayer(id, layout.players[id]);
@@ -365,9 +403,13 @@ function paintSetting(setting, playerId, settingIndex) {
     if (setting.render) {
         contentEl.appendChild(setting.render);
     }
-    const label = setting.labelFunction
-        ? setting.labelFunction()
-        : setting.label;
+    const label =
+        (setting.toggle
+            ? eval(setting.toggle)
+                ? "disable "
+                : "enable "
+            : "") +
+        (setting.labelFunction ? setting.labelFunction() : setting.label);
     contentEl.innerHTML += `<p class="life-total small word-wrap rotate-bottom">${label}</p>`;
 
     if (isSplit) {
@@ -377,10 +419,23 @@ function paintSetting(setting, playerId, settingIndex) {
         contentEl.innerHTML += `<p class="symbol rotate-bottom">${symbolRight}</p>`;
         contentEl.innerHTML += `<div class="left clickable" onclick="${setting.onLeft}"></div>
         <div class="right clickable" onclick="${setting.onRight}"></div>`;
-    } else if (setting.onclick) {
-        contentEl.innerHTML += `<div class="full clickable" onclick="${setting.onclick}"></div>`;
-    } else if (setting.children) {
-        contentEl.innerHTML += `<div class="full clickable" onclick="currentSetting.push(${settingIndex}),paintSettings(settings, settingsLayout)"></div>`;
+    } else {
+        let on_click = "";
+        if (setting.toggle) {
+            on_click += `${setting.toggle} = !${setting.toggle};`;
+        }
+        if (setting.onclick) {
+            on_click += setting.onclick;
+        }
+        if (setting.children) {
+            on_click += `currentSetting.push(${settingIndex});`;
+        }
+        if (on_click) {
+            if (!setting.norepaint) {
+                on_click += `paintSettings();`;
+            }
+            contentEl.innerHTML += `<div class="full clickable" onclick="${on_click}"></div>`;
+        }
     }
     return settingEl;
 }
@@ -393,11 +448,12 @@ function getAtPosition(tree, position) {
     return current;
 }
 
-function paintSettings(settings, layout) {
+function paintSettings() {
     const settingsContainerEl = document.querySelector(".settings-container");
-    settingsContainerEl.style.gridTemplateColumns = `repeat(${layout.gridTemplateColumns}, 1fr)`;
-    settingsContainerEl.style.gridTemplateRows = `repeat(${layout.gridTemplateRows}, 1fr)`;
-    settingsContainerEl.style.gridTemplateAreas = layout.gridTemplateAreas;
+    settingsContainerEl.style.gridTemplateColumns = `repeat(${settingsLayout.gridTemplateColumns}, 1fr)`;
+    settingsContainerEl.style.gridTemplateRows = `repeat(${settingsLayout.gridTemplateRows}, 1fr)`;
+    settingsContainerEl.style.gridTemplateAreas =
+        settingsLayout.gridTemplateAreas;
     settingsContainerEl.innerHTML = "";
 
     const subSetting = getAtPosition(settings, currentSetting);
@@ -406,7 +462,7 @@ function paintSettings(settings, layout) {
         subSettingChildren = subSetting.childrenFunction();
     }
 
-    const playerIds = Object.keys(layout.players);
+    const playerIds = Object.keys(settingsLayout.players);
     const availableSpace = playerIds.length;
     if (subSettingChildren.length < availableSpace) {
         for (let i = 0; i < subSettingChildren.length; i++) {
@@ -445,18 +501,18 @@ function paintSettings(settings, layout) {
 
 function backSettings() {
     if (currentSetting.length == 0) {
-        toggleSettings();
+        exitSettings();
     } else {
         currentSetting.pop();
-        paintSettings(settings, settingsLayout);
+        paintSettings();
     }
 }
 
-function resetSettings() {
+function resetCurrentSetting() {
     currentSetting = [];
     currentPage = 0;
     totalPages = 0;
-    paintSettings(settings, settingsLayout);
+    paintSettings();
 }
 
 function paintMiniLayout(layout) {
@@ -479,49 +535,46 @@ function paintMiniLayout(layout) {
     return playerContainerEl;
 }
 
-function generateRotateLayouts() {
+function generateRotateLayouts(currentLayout) {
     let children = [];
-    let currentLayout = layouts[layoutIndex];
-    currentLayout = rotateLayout(currentLayout, layoutRotation);
-    const maxRotations = layouts[layoutIndex].maxRotations || 4;
+    const maxRotations = currentLayout.maxRotations || 4;
     for (let i = 1; i <= maxRotations - 1; i++) {
-        let currentRotation = (layoutRotation + i) % maxRotations;
+        let currentRotation = i % maxRotations;
         currentLayout = rotateLayout(currentLayout, 1);
-        let setting = {
-            render: paintMiniLayout(currentLayout),
-            label: "",
-            onclick: `layoutRotation = ${currentRotation}, init(), resetSettings(), toggleSettings();`,
-        };
-        children.push(setting);
+        children.push(currentLayout);
     }
     return children;
 }
 
+let layouts = [];
+for (let i = 0; i < original_layouts.length; i++) {
+    const layout = original_layouts[i];
+    layouts.push(layout);
+    layouts.push(...generateRotateLayouts(layout));
+}
+
 let layoutSettings = new Map([
-    [
-        0,
-        {
-            label: "rotate",
-            children: [],
-            childrenFunction: generateRotateLayouts,
-        },
-    ],
     [4, { label: "4 players", children: [] }],
     [2, { label: "2 players", children: [] }],
     [3, { label: "3 players", children: [] }],
     // [1, { label: "1 player (soon)", children: [] }],
     [5, { label: "5 players (soon)", children: [] }],
     [6, { label: "6 players", children: [] }],
+    [7, { label: ">6 players", children: [] }],
 ]);
 for (let i = 0; i < layouts.length; i++) {
     const layout = layouts[i];
     const setting = {
         render: paintMiniLayout(layout),
         label: "",
-        onclick: `layoutIndex = ${i}, layoutRotation = 0, init(), resetSettings(), toggleSettings();`,
+        onclick: `layoutIndex = ${i};init();exitSettings();`,
     };
     const players = Object.keys(layout.players).length;
-    layoutSettings.get(players).children.push(setting);
+    if (players > 6) {
+        layoutSettings.get(7).children.push(setting);
+    } else {
+        layoutSettings.get(players).children.push(setting);
+    }
 }
 
 let currentSetting = [];
@@ -529,7 +582,7 @@ let currentPage = 0;
 let totalPages = 0;
 
 function pageSettingLabel() {
-    return `page ${currentPage}/${totalPages}`;
+    return `page ${currentPage + 1}/${totalPages}`;
 }
 function pageLeftLabel() {
     return currentPage <= 0 ? "back" : "<";
@@ -545,7 +598,7 @@ function pageOnLeft() {
     } else {
         currentPage -= 1;
     }
-    paintSettings(settings, settingsLayout);
+    paintSettings();
 }
 function pageOnRight() {
     if (currentPage + 1 >= totalPages) {
@@ -555,7 +608,7 @@ function pageOnRight() {
     } else {
         currentPage += 1;
     }
-    paintSettings(settings, settingsLayout);
+    paintSettings();
 }
 function backSettingLabel() {
     return currentSetting.length == 0 ? "exit settings" : "back";
@@ -567,19 +620,27 @@ const pageSetting = {
     split: true,
     leftLabelFunction: pageLeftLabel,
     rightLabelFunction: pageRightLabel,
-    onLeft: "pageOnLeft()",
-    onRight: "pageOnRight()",
+    onLeft: "pageOnLeft();",
+    onRight: "pageOnRight();",
 };
 const backSetting = {
     label: "back",
     labelFunction: backSettingLabel,
-    onclick: "backSettings()",
+    onclick: "backSettings();",
 };
 
 const settings = {
     children: [
         { label: "change layout", children: [...layoutSettings.values()] },
-        { label: "restart game (soon)" },
+        {
+            label: "restart game",
+            children: [
+                {
+                    label: "confirm",
+                    onclick: "restartGame();exitSettings();",
+                },
+            ],
+        },
         {
             label: "more settings",
             children: [
@@ -588,31 +649,33 @@ const settings = {
                     children: [
                         {
                             label: "toggle debug",
-                            onclick: `toggleHidden(document.querySelector('.error-log-container'))`,
+                            onclick: `toggleHidden(document.querySelector('.error-log-container'));`,
                         },
                         {
                             label: "clear log",
-                            onclick: `document.querySelector('#error-log').innerHTML = 'log cleared'`,
+                            onclick: `document.querySelector('#error-log').innerHTML = 'log cleared';`,
                         },
                         {
                             label: "log current build",
-                            onclick: `testCurrentBuild()`,
+                            onclick: `testCurrentBuild();`,
                         },
                         {
-                            label: "toggle source",
-                            onclick: `errorSource = !errorSource; writeLog(\`source = \$\{errorSource\}\`)`,
+                            label: "source",
+                            onclick: `writeLog(\`source = \$\{errorSource\}\`);`,
+                            toggle: `errorSource`,
                         },
                         {
-                            label: "toggle timestamp",
-                            onclick: `errorTimestamp = !errorTimestamp; writeLog(\`timestamp = \$\{errorTimestamp\}\`)`,
+                            label: "timestamp",
+                            onclick: `writeLog(\`timestamp = \$\{errorTimestamp\}\`);`,
+                            toggle: `errorTimestamp`,
                         },
                         {
                             label: "test error",
-                            onclick: `testError()`,
+                            onclick: `testError();`,
                         },
                         {
                             label: "test write",
-                            onclick: `writeLog('test')`,
+                            onclick: `writeLog('test');`,
                         },
                     ],
                 },
@@ -623,6 +686,5 @@ const settings = {
 
 const settingsLayout = layouts[0];
 let layoutIndex = 0;
-let layoutRotation = 0;
 init();
-paintSettings(settings, settingsLayout);
+paintSettings();

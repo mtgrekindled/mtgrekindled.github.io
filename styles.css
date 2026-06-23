@@ -171,6 +171,14 @@ p {
     position: relative;
 }
 
+.mini .player {
+    background-color: var(--surface2);
+    background: var(--surface2);
+    border-radius: 5px;
+    border-radius: 1vw;
+    border-radius: min(1vw, 5px);
+}
+
 .content {
     width: 100%;
     height: 100%;
